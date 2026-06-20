@@ -15,6 +15,7 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
   final _specialtyController = TextEditingController();
   final _qualificationController = TextEditingController();
   final _licenseNumberController = TextEditingController();
+  final _bookingFeeController = TextEditingController();
   final _workDays = <String>{};
   String? _licenseFileName;
 
@@ -30,6 +31,7 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
     _specialtyController.dispose();
     _qualificationController.dispose();
     _licenseNumberController.dispose();
+    _bookingFeeController.dispose();
     super.dispose();
   }
 
@@ -118,6 +120,21 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
                           prefixIcon: Icon(Icons.confirmation_number),
                         ),
                         validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال رقم الترخيص' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _bookingFeeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'قيمة الحجز',
+                          hintText: 'مثال: 100',
+                          suffixText: 'ريال',
+                          prefixIcon: Icon(Icons.payments),
+                        ),
+                        validator: (v) {
+                          final fee = double.tryParse((v ?? '').trim());
+                          return fee == null || fee <= 0 ? 'الرجاء إدخال قيمة الحجز' : null;
+                        },
                       ),
                       const SizedBox(height: 16),
                       Row(

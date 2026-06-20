@@ -252,6 +252,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       final doctorId = doctor['uid'];
       final doctorImageUrl = doctor['profileImageUrl'] ?? '';
       final doctorPhone = doctor['phone'] ?? '';
+      final bookingFee = _bookingFeeForDoctor(doctor);
 
       final appointmentDateTime = DateTime(
         _selectedDate!.year,
@@ -278,7 +279,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         'workplace': _selectedWorkplace,
         'payment': _selectedPayment,
         'paymentMethod': _selectedPayment,
-        'paymentStatus': _selectedPayment == 'الدفع عند الاستلام' ? 'pending_on_delivery' : 'unpaid',
+        'paymentStatus': _selectedPayment == 'الدفع عند المقابلة' ? 'pending_at_visit' : 'unpaid',
+        'bookingFee': bookingFee,
+        'consultationFee': bookingFee,
+        'price': bookingFee,
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
 
@@ -472,7 +476,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 _buildDropdown<String>(
                   label: 'طريقة الدفع',
                   value: _selectedPayment,
-                  items: const ['الدفع عند الاستلام', 'نقداً', 'بطاقة بنكية'],
+                  items: const ['الدفع عند المقابلة', 'بطاقة بنكية'],
                   icon: Icons.payment,
                   onChanged: (val) => setState(() => _selectedPayment = val),
                 ),
@@ -488,7 +492,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                 icon: const Icon(Icons.check_circle_outline),
-                label: Text(_selectedPayment == 'الدفع عند الاستلام' ? 'تأكيد الحجز' : 'تأكيد الحجز والدفع'),
+                label: Text(_selectedPayment == 'الدفع عند المقابلة' ? 'تأكيد الحجز' : 'تأكيد الحجز والدفع'),
                 onPressed: isFormComplete ? _confirmBooking : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -572,6 +576,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
   Widget _buildDoctorDetails(Map<String, dynamic> doctor) {
     final theme = Theme.of(context);
+    final bookingFee = _bookingFeeForDoctor(doctor);
     return PremiumSurface(
       margin: const EdgeInsets.only(top: 4),
       padding: const EdgeInsets.all(16),
@@ -621,8 +626,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(label: Text('أقل سعر: ${doctor['minSessionPrice'] ?? doctor['minPrice'] ?? 0}')),
-              Chip(label: Text('أعلى سعر: ${doctor['maxSessionPrice'] ?? doctor['maxPrice'] ?? 0}')),
+              Chip(
+                avatar: Icon(Icons.payments, size: 16, color: theme.colorScheme.primary),
+                label: Text('قيمة الحجز: ${_formatFee(bookingFee)}'),
+              ),
               Chip(avatar: Icon(Icons.reviews, size: 16, color: theme.colorScheme.primary), label: Text('المراجعات: ${doctor['reviewsCount'] ?? doctor['reviewCount'] ?? 0}')),
               if (doctor['moodIndicator'] != null || doctor['mood'] != null) Chip(label: Text('مؤشر الحالة: ${doctor['moodIndicator'] ?? doctor['mood']}')),
             ],
@@ -640,6 +647,23 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         ],
       ),
     );
+  }
+
+  double _bookingFeeForDoctor(Map<String, dynamic> doctor) {
+    final value = doctor['bookingFee'] ??
+        doctor['consultationFee'] ??
+        doctor['sessionPrice'] ??
+        doctor['minSessionPrice'] ??
+        doctor['minPrice'] ??
+        0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  String _formatFee(double fee) {
+    if (fee <= 0) return 'غير محددة';
+    final hasDecimals = fee.truncateToDouble() != fee;
+    return '${fee.toStringAsFixed(hasDecimals ? 2 : 0)} ريال';
   }
 
   Widget _buildWorkplaceSchedule(String workplaceName) {

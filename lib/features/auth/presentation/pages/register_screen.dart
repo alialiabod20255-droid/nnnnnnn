@@ -87,8 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _licenseNumberController = TextEditingController();
   final _workplaceNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _minSessionPriceController = TextEditingController();
-  final _maxSessionPriceController = TextEditingController();
+  final _bookingFeeController = TextEditingController();
   PickedDoctorLocation? _doctorLocation;
 
   PlatformFile? _licenseDocument;
@@ -154,8 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _licenseNumberController.dispose();
     _workplaceNameController.dispose();
     _phoneController.dispose();
-    _minSessionPriceController.dispose();
-    _maxSessionPriceController.dispose();
+    _bookingFeeController.dispose();
     super.dispose();
   }
 
@@ -586,10 +584,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _validatePrice(String? value) {
     if (_selectedAccountType != 'doctor') return null;
     final price = double.tryParse((value ?? '').trim());
-    if (price == null || price < 0) return 'أدخل سعراً صحيحاً';
-    final min = double.tryParse(_minSessionPriceController.text.trim());
-    final max = double.tryParse(_maxSessionPriceController.text.trim());
-    if (min != null && max != null && min > max) return 'أقل سعر يجب أن يكون أصغر من أعلى سعر';
+    if (price == null || price <= 0) return 'أدخل قيمة حجز صحيحة';
     return null;
   }
 
@@ -609,6 +604,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final qualification = _specialtyNameController.text.trim();
       final licenseNumber = _licenseNumberController.text.trim();
       final workplaces = _workplaces.map((wp) => wp.toMap()).toList();
+      final bookingFee = double.tryParse(_bookingFeeController.text.trim()) ?? 0;
 
       Map<String, dynamic> userData = {
         'uid': uid,
@@ -647,8 +643,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'accountStatus': 'Pending',
           'doctorRequestStatus': 'pending',
           'doctorRequestId': uid,
-          'minSessionPrice': double.tryParse(_minSessionPriceController.text.trim()) ?? 0,
-          'maxSessionPrice': double.tryParse(_maxSessionPriceController.text.trim()) ?? 0,
+          'bookingFee': bookingFee,
+          'consultationFee': bookingFee,
+          'sessionPrice': bookingFee,
+          'minSessionPrice': bookingFee,
+          'maxSessionPrice': bookingFee,
           'latitude': _doctorLocation?.latitude,
           'longitude': _doctorLocation?.longitude,
           'address': _doctorLocation?.address ?? '',
@@ -696,6 +695,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'bio': '',
           'specialties': specialty.isEmpty ? <String>[] : <String>[specialty],
           'yearsOfExperience': '0',
+          'bookingFee': bookingFee,
+          'consultationFee': bookingFee,
+          'sessionPrice': bookingFee,
+          'minSessionPrice': bookingFee,
+          'maxSessionPrice': bookingFee,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         };
@@ -1184,26 +1188,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: LinearProgressIndicator(),
                     ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _minSessionPriceController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'أقل سعر جلسة', border: OutlineInputBorder()),
-                          validator: _validatePrice,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _maxSessionPriceController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'أعلى سعر جلسة', border: OutlineInputBorder()),
-                          validator: _validatePrice,
-                        ),
-                      ),
-                    ],
+                  TextFormField(
+                    controller: _bookingFeeController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'قيمة الحجز',
+                      hintText: 'مثال: 100',
+                      suffixText: 'ريال',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: _validatePrice,
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(

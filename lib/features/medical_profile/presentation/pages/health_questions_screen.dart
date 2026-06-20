@@ -20,6 +20,8 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   int _currentStep = 0;
+  static const int _totalSteps = 7;
+  static const int _lastStepIndex = _totalSteps - 1;
 
   // متغيرات الأسئلة
   late int _age;
@@ -27,6 +29,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
   bool _hasChronicDisease = false;
   String _chronicDiseaseDetails = '';
   String _symptoms = '';
+  String _illnessDuration = '';
   DateTime? _symptomStartDate;
   int _painLevel = 5;
 
@@ -124,6 +127,35 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/home',
+                  (route) => false,
+                );
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.white.withOpacity(0.16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.white.withOpacity(0.28)),
+                ),
+              ),
+              icon: const Icon(Icons.home_rounded, size: 20),
+              label: const Text(
+                'الرجوع للرئيسية',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           const Text(
             'بناء ملفك الصحي',
             style: TextStyle(
@@ -155,7 +187,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: (_currentStep + 1) / 6,
+              value: (_currentStep + 1) / _totalSteps,
               minHeight: 8,
               backgroundColor: Colors.grey[200],
               valueColor: const AlwaysStoppedAnimation<Color>(
@@ -167,15 +199,15 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
           // الخطوات المرقمة
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(6, (index) {
+            children: List.generate(_totalSteps, (index) {
               final isCompleted = index < _currentStep;
               final isCurrent = index == _currentStep;
 
               return Column(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
                       color: isCompleted || isCurrent
                           ? AppTheme.primaryBlue
@@ -203,7 +235,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
                               style: TextStyle(
                                 color: isCurrent ? Colors.white : Colors.black,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                             ),
                     ),
@@ -268,7 +300,15 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
 
   // ✅ الحصول على عنوان الخطوة
   String _getStepTitle(int index) {
-    const titles = ['العمر', 'الجنس', 'مرض مزمن', 'الأعراض', 'التاريخ', 'الألم'];
+    const titles = [
+      'العمر',
+      'الجنس',
+      'مرض مزمن',
+      'الأعراض',
+      'مدة المرض',
+      'التاريخ',
+      'الألم',
+    ];
     return index < titles.length ? titles[index] : '';
   }
 
@@ -279,6 +319,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
       Icons.people,
       Icons.health_and_safety,
       Icons.sick,
+      Icons.timelapse,
       Icons.calendar_today,
       Icons.favorite,
     ];
@@ -296,8 +337,10 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
       case 3:
         return _buildSymptomsQuestion();
       case 4:
-        return _buildSymptomStartDateQuestion();
+        return _buildIllnessDurationQuestion();
       case 5:
+        return _buildSymptomStartDateQuestion();
+      case 6:
         return _buildPainLevelQuestion();
       default:
         return const SizedBox();
@@ -328,10 +371,27 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
         TextFormField(
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          cursorColor: AppTheme.primaryBlue,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF111827),
+            letterSpacing: 0.4,
+          ),
           decoration: InputDecoration(
+            labelText: 'العمر بالسنوات',
             hintText: 'أدخل عمرك',
-            hintStyle: const TextStyle(fontSize: 16),
+            helperText: 'مثال: 30',
+            suffixText: 'سنة',
+            labelStyle: const TextStyle(
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w700,
+            ),
+            hintStyle: const TextStyle(
+              fontSize: 18,
+              color: Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w600,
+            ),
             prefixIcon: Icon(
               Icons.cake,
               color: AppTheme.primaryBlue,
@@ -526,7 +586,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '5. منذ متى بدأت الأعراض؟',
+          '6. منذ متى بدأت الأعراض؟',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -565,12 +625,69 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
     );
   }
 
+  Widget _buildIllnessDurationQuestion() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '5. كم مدة المرض الذي تعاني منه؟',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'اكتب المدة بشكل واضح مثل: يومين، أسبوع، شهر، أو أكثر',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          initialValue: _illnessDuration,
+          textInputAction: TextInputAction.done,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+          decoration: InputDecoration(
+            labelText: 'مدة المرض',
+            hintText: 'مثال: 3 أيام / أسبوعين / شهر',
+            prefixIcon: const Icon(Icons.timelapse),
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[200]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppTheme.primaryBlue, width: 2),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'الرجاء إدخال مدة المرض';
+            }
+            return null;
+          },
+          onChanged: (value) => _illnessDuration = value.trim(),
+          onSaved: (value) => _illnessDuration = value?.trim() ?? '',
+        ),
+      ],
+    );
+  }
+
   Widget _buildPainLevelQuestion() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '6. درجة الألم أو التعب (1-10)',
+          '7. درجة الألم أو التعب (1-10)',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -639,7 +756,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
               ),
             ),
             child: Text(
-              _currentStep == 5 ? 'إرسال البيانات' : 'التالي',
+              _currentStep == _lastStepIndex ? 'إرسال البيانات' : 'التالي',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -679,7 +796,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    if (_currentStep < 5) {
+    if (_currentStep < _lastStepIndex) {
       setState(() => _currentStep++);
     } else {
       _submitHealthProfile();
@@ -722,6 +839,7 @@ class _HealthQuestionsScreenState extends State<HealthQuestionsScreen> {
         hasChronicDisease: _hasChronicDisease,
         chronicDiseaseDetails: _hasChronicDisease ? _chronicDiseaseDetails : null,
         symptoms: _symptoms,
+        illnessDuration: _illnessDuration,
         symptomStartDate: _symptomStartDate!.toIso8601String(),
         painLevel: _painLevel,
         createdAt: DateTime.now(),

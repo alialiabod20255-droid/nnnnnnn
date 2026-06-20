@@ -9,6 +9,7 @@ class HealthProfile {
   final bool hasChronicDisease;
   final String? chronicDiseaseDetails;
   final String symptoms;
+  final String? illnessDuration;
   final String symptomStartDate;
   final int painLevel; // 1-10
   final DateTime createdAt;
@@ -22,6 +23,7 @@ class HealthProfile {
     required this.hasChronicDisease,
     this.chronicDiseaseDetails,
     required this.symptoms,
+    this.illnessDuration,
     required this.symptomStartDate,
     required this.painLevel,
     required this.createdAt,
@@ -39,6 +41,7 @@ class HealthProfile {
       hasChronicDisease: data['hasChronicDisease'] ?? false,
       chronicDiseaseDetails: data['chronicDiseaseDetails'],
       symptoms: data['symptoms'] ?? '',
+      illnessDuration: data['illnessDuration'],
       symptomStartDate: data['symptomStartDate'] ?? '',
       painLevel: data['painLevel'] ?? 5,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -55,6 +58,7 @@ class HealthProfile {
       'hasChronicDisease': hasChronicDisease,
       'chronicDiseaseDetails': chronicDiseaseDetails,
       'symptoms': symptoms,
+      'illnessDuration': illnessDuration,
       'symptomStartDate': symptomStartDate,
       'painLevel': painLevel,
       'createdAt': FieldValue.serverTimestamp(),
@@ -71,6 +75,7 @@ class HealthProfile {
     bool? hasChronicDisease,
     String? chronicDiseaseDetails,
     String? symptoms,
+    String? illnessDuration,
     String? symptomStartDate,
     int? painLevel,
     DateTime? createdAt,
@@ -84,6 +89,7 @@ class HealthProfile {
       hasChronicDisease: hasChronicDisease ?? this.hasChronicDisease,
       chronicDiseaseDetails: chronicDiseaseDetails ?? this.chronicDiseaseDetails,
       symptoms: symptoms ?? this.symptoms,
+      illnessDuration: illnessDuration ?? this.illnessDuration,
       symptomStartDate: symptomStartDate ?? this.symptomStartDate,
       painLevel: painLevel ?? this.painLevel,
       createdAt: createdAt ?? this.createdAt,

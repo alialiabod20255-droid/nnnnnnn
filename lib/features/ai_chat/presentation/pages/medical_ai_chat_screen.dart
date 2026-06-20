@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:digl/services/user_role_service.dart';
 import '../../data/models/medical_intake.dart';
 import '../../data/repositories/medical_ai_repository.dart';
@@ -16,6 +18,7 @@ class MedicalAiChatScreen extends StatefulWidget {
 }
 
 class _MedicalAiChatScreenState extends State<MedicalAiChatScreen> {
+  static const String _savedIntakeKey = 'medical_ai_saved_intake';
   final _formKey = GlobalKey<FormState>();
   final _problem = TextEditingController();
   final _started = TextEditingController();
@@ -25,9 +28,50 @@ class _MedicalAiChatScreenState extends State<MedicalAiChatScreen> {
   String _gender = 'ذكر';
   String _severity = 'متوسطة';
   MedicalIntake? _intake;
+  bool _isLoadingSavedIntake = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedIntake();
+  }
 
   @override
   void dispose() { _problem.dispose(); _started.dispose(); _age.dispose(); _duration.dispose(); _message.dispose(); super.dispose(); }
+
+  Future<void> _loadSavedIntake() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_savedIntakeKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final intake = MedicalIntake.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+        if (intake.problem.trim().isNotEmpty && mounted) {
+          setState(() => _intake = intake);
+        }
+      } catch (_) {
+        await prefs.remove(_savedIntakeKey);
+      }
+    }
+    if (mounted) setState(() => _isLoadingSavedIntake = false);
+  }
+
+  Future<void> _saveIntake(MedicalIntake intake) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_savedIntakeKey, jsonEncode(intake.toMap()));
+  }
+
+  Future<void> _startNewChat(BuildContext providerContext) async {
+    providerContext.read<MedicalAiChatProvider>().clearMessages();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_savedIntakeKey);
+    if (!mounted) return;
+    _problem.clear();
+    _started.clear();
+    _age.clear();
+    _duration.clear();
+    _message.clear();
+    setState(() => _intake = null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +96,15 @@ class _MedicalAiChatScreenState extends State<MedicalAiChatScreen> {
               ),
             );
           }
+          if (_isLoadingSavedIntake) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
           return Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.of(context).pop()),
           title: const Text('مساعد نبض AI'),
-          actions: [IconButton(tooltip: 'محادثة جديدة', onPressed: () => setState(() => _intake = null), icon: const Icon(Icons.add_comment_rounded))],
+          actions: [IconButton(tooltip: 'محادثة جديدة', onPressed: () => _startNewChat(context), icon: const Icon(Icons.add_comment_rounded))],
         ),
         body: SafeArea(child: _intake == null ? _buildIntake(context) : _buildChat(context)),
       );
@@ -75,7 +122,7 @@ class _MedicalAiChatScreenState extends State<MedicalAiChatScreen> {
     const SizedBox(height: 12), DropdownButtonFormField(value: _gender, decoration: const InputDecoration(labelText: 'الجنس'), items: ['ذكر','أنثى'].map((e)=>DropdownMenuItem(value:e, child:Text(e))).toList(), onChanged: (v)=>setState(()=>_gender=v!)),
     const SizedBox(height: 12), TextFormField(controller: _duration, decoration: const InputDecoration(labelText: 'مدة الأعراض'), validator: _required),
     const SizedBox(height: 12), DropdownButtonFormField(value: _severity, decoration: const InputDecoration(labelText: 'شدة الحالة'), items: ['خفيفة','متوسطة','شديدة','طارئة'].map((e)=>DropdownMenuItem(value:e, child:Text(e))).toList(), onChanged: (v)=>setState(()=>_severity=v!)),
-    const SizedBox(height: 20), Consumer<MedicalAiChatProvider>(builder: (context, provider, _) => ElevatedButton.icon(onPressed: provider.isLoading ? null : () async { if(!_formKey.currentState!.validate()) return; final intake=MedicalIntake(problem:_problem.text.trim(), symptomStart:_started.text.trim(), age:int.parse(_age.text.trim()), gender:_gender, duration:_duration.text.trim(), severity:_severity); setState(()=>_intake=intake); await provider.buildInitialRecommendation(intake); }, icon: const Icon(Icons.auto_awesome), label: const Text('ابدأ المحادثة'))),
+    const SizedBox(height: 20), Consumer<MedicalAiChatProvider>(builder: (context, provider, _) => ElevatedButton.icon(onPressed: provider.isLoading ? null : () async { if(!_formKey.currentState!.validate()) return; final intake=MedicalIntake(problem:_problem.text.trim(), symptomStart:_started.text.trim(), age:int.parse(_age.text.trim()), gender:_gender, duration:_duration.text.trim(), severity:_severity); provider.clearMessages(); await _saveIntake(intake); if (!mounted) return; setState(()=>_intake=intake); await provider.buildInitialRecommendation(intake); }, icon: const Icon(Icons.auto_awesome), label: const Text('ابدأ المحادثة'))),
   ]));
 
   Widget _buildChat(BuildContext context) => Consumer<MedicalAiChatProvider>(builder: (context, provider, _) => AnimatedPadding(

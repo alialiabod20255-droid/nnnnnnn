@@ -23,6 +23,12 @@ class MedicalAiChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearMessages() {
+    messages.clear();
+    error = null;
+    notifyListeners();
+  }
+
   Future<String> buildInitialRecommendation(MedicalIntake intake) async {
     isLoading = true;
     error = null;

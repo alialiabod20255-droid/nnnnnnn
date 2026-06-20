@@ -306,7 +306,8 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
   String _translatePaymentStatus(String status) {
     switch (status) {
-      case 'pending_on_delivery': return 'الدفع عند الاستلام';
+      case 'pending_at_visit': return 'الدفع عند المقابلة';
+      case 'pending_on_delivery': return 'الدفع عند المقابلة';
       case 'paid': return 'مدفوع';
       case 'unpaid': return 'غير مدفوع';
       default: return status;

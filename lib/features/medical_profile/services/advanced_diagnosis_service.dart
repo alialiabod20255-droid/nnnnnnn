@@ -459,6 +459,9 @@ class AdvancedDiagnosisService {
     }
 
     // مدة الأعراض
+    if ((profile.illnessDuration ?? '').trim().isNotEmpty) {
+      analysis.writeln('   • مدة المرض حسب إدخال المريض: ${profile.illnessDuration}');
+    }
     analysis.writeln('   • مدة الأعراض: ${profile.symptomStartDate}');
 
     // درجة الخطورة

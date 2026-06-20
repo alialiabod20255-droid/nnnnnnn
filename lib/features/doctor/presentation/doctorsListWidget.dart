@@ -199,8 +199,8 @@ class DoctorCard extends StatelessWidget {
                     children: [
                       _miniChip(Icons.star, (user.rating ?? 0).toStringAsFixed(1), Colors.orange),
                       _miniChip(Icons.reviews, '${user.reviewCount ?? 0}', Theme.of(context).colorScheme.primary),
-                      if (user.minSessionPrice != null || user.maxSessionPrice != null)
-                        _miniChip(Icons.payments, '${user.minSessionPrice?.toStringAsFixed(0) ?? 0}-${user.maxSessionPrice?.toStringAsFixed(0) ?? 0}', Colors.green),
+                      if (user.bookingFee != null || user.minSessionPrice != null)
+                        _miniChip(Icons.payments, '${(user.bookingFee ?? user.minSessionPrice ?? 0).toStringAsFixed(0)} ريال', Colors.green),
                       if ((user.address ?? '').isNotEmpty)
                         _miniChip(Icons.location_on, 'خرائط', Colors.redAccent),
                     ],

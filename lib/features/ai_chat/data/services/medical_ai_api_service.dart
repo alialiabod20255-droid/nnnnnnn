@@ -3,8 +3,12 @@ import '../models/ai_chat_message.dart';
 import '../models/medical_intake.dart';
 
 class MedicalAiApiService {
-  // اترك المفتاح فارغاً داخل الكود، ومرره وقت التشغيل عبر:
-  // --dart-define=GEMINI_API_KEY=YOUR_KEY
+  static const String _geminiApiKey =
+      String.fromEnvironment('GEMINI_API_KEY');
+  static const String _geminiApiKeyLower =
+      String.fromEnvironment('gemini_api_key');
+  static const String _medicalAiBaseUrl =
+      String.fromEnvironment('MEDICAL_AI_BASE_URL');
 
   final Dio _dio;
   final String? baseUrl;
@@ -12,9 +16,16 @@ class MedicalAiApiService {
 
   MedicalAiApiService({
     Dio? dio,
-    this.baseUrl = const String.fromEnvironment(' '),
-    this.apiKey = const String.fromEnvironment(''),
-  }) : _dio = dio ?? Dio();
+    this.baseUrl = _medicalAiBaseUrl,
+    String? apiKey,
+  })  : apiKey = apiKey ?? _resolveDefaultApiKey(),
+        _dio = dio ?? Dio();
+
+  static String _resolveDefaultApiKey() {
+    if (_geminiApiKey.trim().isNotEmpty) return _geminiApiKey.trim();
+    if (_geminiApiKeyLower.trim().isNotEmpty) return _geminiApiKeyLower.trim();
+    return '';
+  }
 
   Future<String> sendMedicalMessage({
     required MedicalIntake intake,
@@ -56,29 +67,41 @@ class MedicalAiApiService {
     final geminiUrl =
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$key';
 
-    final response = await _dio.post(
-      geminiUrl,
-      data: {
-        'contents': [
-          {
-            'role': 'user',
-            'parts': [
-              {
-                'text':
-                '$_systemPrompt\n\n'
-                    'بيانات الحالة:\n${intake.toPrompt()}\n\n'
-                    'سجل مختصر:\n${history.map((e) => '${e.isUser ? 'المستخدم' : 'المساعد'}: ${e.content}').join('\n')}\n\n'
-                    'سؤال المستخدم:\n$message',
-              }
-            ]
-          }
-        ],
-        'generationConfig': {
-          'temperature': 0.4,
-          'maxOutputTokens': 900,
+    Response<dynamic> response;
+    try {
+      response = await _dio.post(
+        geminiUrl,
+        data: {
+          'contents': [
+            {
+              'role': 'user',
+              'parts': [
+                {
+                  'text':
+                  '$_systemPrompt\n\n'
+                      'بيانات الحالة:\n${intake.toPrompt()}\n\n'
+                      'سجل مختصر:\n${history.map((e) => '${e.isUser ? 'المستخدم' : 'المساعد'}: ${e.content}').join('\n')}\n\n'
+                      'سؤال المستخدم:\n$message',
+                }
+              ]
+            }
+          ],
+          'generationConfig': {
+            'temperature': 0.4,
+            'maxOutputTokens': 900,
+          },
         },
-      },
-    );
+      );
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 401 || statusCode == 403) {
+        return 'تعذر الاتصال بخدمة الذكاء الاصطناعي لأن مفتاح Gemini غير مقبول أو لا يملك صلاحية Generative Language API. تأكد من تشغيل التطبيق باستخدام --dart-define=GEMINI_API_KEY=YOUR_REAL_GEMINI_KEY بدون مسافات، ومن تفعيل Gemini API لهذا المفتاح.';
+      }
+      if (statusCode == 400) {
+        return 'تعذر إرسال الطلب إلى Gemini. تحقق من أن مفتاح API صحيح وأن خدمة Gemini مفعلة في Google AI Studio أو Google Cloud.';
+      }
+      return 'تعذر الاتصال بخدمة الذكاء الاصطناعي حالياً. حاول مرة أخرى لاحقاً.';
+    }
 
     final reply = (
         response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??

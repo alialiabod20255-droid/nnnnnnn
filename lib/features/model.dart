@@ -33,6 +33,7 @@ class UserModel {
   final Timestamp? lastSeen;
   final double? minSessionPrice;
   final double? maxSessionPrice;
+  final double? bookingFee;
   final double? latitude;
   final double? longitude;
   final String? address;
@@ -68,6 +69,7 @@ class UserModel {
     this.lastSeen,
     this.minSessionPrice,
     this.maxSessionPrice,
+    this.bookingFee,
     this.latitude,
     this.longitude,
     this.address,
@@ -106,11 +108,17 @@ class UserModel {
       lastSeen: data['lastSeen'] is Timestamp ? data['lastSeen'] : null,
       minSessionPrice: (data['minSessionPrice'] as num?)?.toDouble(),
       maxSessionPrice: (data['maxSessionPrice'] as num?)?.toDouble(),
+      bookingFee: _toDouble(data['bookingFee'] ?? data['consultationFee'] ?? data['sessionPrice'] ?? data['minSessionPrice']),
       latitude: (data['latitude'] as num?)?.toDouble(),
       longitude: (data['longitude'] as num?)?.toDouble(),
       address: (data['address'] ?? data['clinicAddress'])?.toString(),
       reviewCount: data['reviewCount'] as int?,
     );
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '');
   }
 
   Map<String, dynamic> toMap() {
@@ -145,6 +153,7 @@ class UserModel {
     if (fcmToken != null) map['fcmToken'] = fcmToken;
     if (minSessionPrice != null) map['minSessionPrice'] = minSessionPrice;
     if (maxSessionPrice != null) map['maxSessionPrice'] = maxSessionPrice;
+    if (bookingFee != null) map['bookingFee'] = bookingFee;
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;
     if (address != null) map['address'] = address;

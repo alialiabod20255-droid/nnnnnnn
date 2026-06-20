@@ -24,8 +24,12 @@ class _MedicalNewsWidgetState extends State<MedicalNewsWidget> {
   }
 
   Future<void> _loadNews() async {
-    news = await HealthNewsService.fetchMedicalNews();
-    setState(() => isLoading = false);
+    final loadedNews = await HealthNewsService.fetchMedicalNews();
+    if (!mounted) return;
+    setState(() {
+      news = loadedNews;
+      isLoading = false;
+    });
   }
 
   @override
@@ -49,13 +53,14 @@ class _MedicalNewsWidgetState extends State<MedicalNewsWidget> {
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: Colors.blue,
-                ),),
-
+                ),
+              ),
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => AllHealthNewsScreen(newsList: news,),
+                    MaterialPageRoute(
+                      builder: (_) => AllHealthNewsScreen(newsList: news),
                     ),
                   );
                 },
@@ -65,9 +70,27 @@ class _MedicalNewsWidgetState extends State<MedicalNewsWidget> {
           ),
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: ListView.builder(
+        if (news.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[900] : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor.withOpacity(0.35)),
+              ),
+              child: const Text(
+                'لا توجد أخبار طبية متاحة حالياً. اسحب لتحديث الصفحة وحاول مرة أخرى.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 250,
+            child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: news.length,
             itemBuilder: (context, index) {
@@ -136,9 +159,9 @@ class _MedicalNewsWidgetState extends State<MedicalNewsWidget> {
                   ),
                 ),
               );
-            },
+              },
+            ),
           ),
-        ),
       ],
     );
   }

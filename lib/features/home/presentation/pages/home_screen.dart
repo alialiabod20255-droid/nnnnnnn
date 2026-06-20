@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:digl/features/consultations/presentation/pages/instant_consultation_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,7 +18,6 @@ import '../../../healthNews/medical_tips_widget.dart';
 import '../../../medications/presentation/pages/medications_screen.dart';
 import '../../../model.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
-import 'package:http/http.dart' as http;
 import 'UpcomingMedicationsSection.dart';
 import 'notificationsScreen.dart';
 
@@ -44,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Appointment> appointments = [];
   List<Map<String, dynamic>> medications = [];
-  List<Map<String, dynamic>> healthNews = [];
   List<HealthNewsItem> chronicTips = [], nutritionTips = [], preventionTips = [], medicalNews = [];
 
   int unreadNotifications = 0;
@@ -70,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _fetchMedications(),
       _fetchHealthStats(),
       _loadTipsAndNews(),
-      _fetchHealthNews(),
     ]);
     if (!mounted) return;
     setState(() => isLoading = false);
@@ -142,34 +138,6 @@ class _HomeScreenState extends State<HomeScreen> {
       medications = [];
     }
   }
-  Future<void> _fetchHealthNews() async {
-    const apiKey = '549d849192e84b2d9c96d5e29f8ff3c5';
-    final url = Uri.parse(
-      'https://newsapi.org/v2/everything?q=الصحة OR الطب OR الوقاية OR العلاج&language=ar&sortBy=publishedAt&apiKey=$apiKey',
-    );
-
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List articles = data['articles'];
-        healthNews = articles.map((e) {
-          return {
-            'title': e['title'] ?? 'بدون عنوان',
-            'source': e['source']['name'] ?? 'مصدر غير معروف',
-            'image': e['urlToImage'],
-            'url': e['url'],
-            'description': e['description'] ?? '',
-            'content': e['content'] ?? '',
-          };
-        }).toList();
-        setState(() {});
-      }
-    } catch (e) {
-      debugPrint('Error fetching health news: $e');
-    }
-  }
-
   Future<void> _fetchHealthStats() async {
     try {
       final user = _auth.currentUser;
@@ -188,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
       chronicTips = await HealthNewsService.fetchChronicDiseaseTips();
       nutritionTips = await HealthNewsService.fetchNutritionTips();
       preventionTips = await HealthNewsService.fetchPreventionTips();
-      medicalNews = await HealthNewsService.fetchNutritionTips();
+      medicalNews = await HealthNewsService.fetchMedicalNews();
       setState(() {});
     } catch (e) {
       debugPrint('Error loading tips: $e');
@@ -343,6 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: currentUserModel!.isPatient
           ? FloatingActionButton.extended(
               heroTag: 'global_ai_chat_fab',
+              elevation: 0,
+              highlightElevation: 0,
               onPressed: () => Navigator.of(context).pushNamed('/medical_ai_chat'),
               icon: const Icon(Icons.smart_toy_rounded),
               label: const Text('مساعد AI'),

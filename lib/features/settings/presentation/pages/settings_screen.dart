@@ -8,7 +8,6 @@ import 'package:digl/core/widgets/premium_ui.dart';
 import 'package:digl/services/user_role_service.dart';
 import 'package:digl/services/logout_service.dart';
 import 'package:digl/features/settings/presentation/pages/health_assessment_screen.dart';
-import 'package:digl/features/medical_profile/presentation/pages/ai_symptom_questions_screen.dart';
 import 'package:digl/features/settings/presentation/pages/static_info_pages.dart';
 import 'package:provider/provider.dart';
 

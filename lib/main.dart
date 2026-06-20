@@ -52,13 +52,27 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
+
+Future<FirebaseApp> _ensureFirebaseInitialized() async {
+  if (Firebase.apps.isNotEmpty) {
+    return Firebase.app();
+  }
+
+  try {
+    return await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  } on FirebaseException catch (e) {
+    if (e.code == 'duplicate-app') {
+      return Firebase.app();
+    }
+    rethrow;
   }
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await _ensureFirebaseInitialized();
 
   print("🔔 رسالة FCM بالخلفية: ${message.messageId}");
 }
@@ -101,11 +115,7 @@ Future<void> main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.initialize();
 
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+  await _ensureFirebaseInitialized();
 
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,

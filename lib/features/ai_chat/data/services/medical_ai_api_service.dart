@@ -1,10 +1,15 @@
 import 'package:dio/dio.dart';
+import 'package:digl/firebase_options.dart';
 import '../models/ai_chat_message.dart';
 import '../models/medical_intake.dart';
 
 class MedicalAiApiService {
-  // اترك المفتاح فارغاً داخل الكود، ومرره وقت التشغيل عبر:
-  // --dart-define=GEMINI_API_KEY=YOUR_KEY
+  static const String _geminiApiKey =
+      String.fromEnvironment('GEMINI_API_KEY');
+  static const String _geminiApiKeyLower =
+      String.fromEnvironment('gemini_api_key');
+  static const String _medicalAiBaseUrl =
+      String.fromEnvironment('MEDICAL_AI_BASE_URL');
 
   final Dio _dio;
   final String? baseUrl;
@@ -12,9 +17,16 @@ class MedicalAiApiService {
 
   MedicalAiApiService({
     Dio? dio,
-    this.baseUrl = const String.fromEnvironment(' '),
-    this.apiKey = const String.fromEnvironment(''),
-  }) : _dio = dio ?? Dio();
+    this.baseUrl = _medicalAiBaseUrl,
+    String? apiKey,
+  })  : apiKey = apiKey ?? _resolveDefaultApiKey(),
+        _dio = dio ?? Dio();
+
+  static String _resolveDefaultApiKey() {
+    if (_geminiApiKey.trim().isNotEmpty) return _geminiApiKey.trim();
+    if (_geminiApiKeyLower.trim().isNotEmpty) return _geminiApiKeyLower.trim();
+    return DefaultFirebaseOptions.currentPlatform.apiKey.trim();
+  }
 
   Future<String> sendMedicalMessage({
     required MedicalIntake intake,

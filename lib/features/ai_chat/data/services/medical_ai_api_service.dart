@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:digl/firebase_options.dart';
 import '../models/ai_chat_message.dart';
 import '../models/medical_intake.dart';
 
